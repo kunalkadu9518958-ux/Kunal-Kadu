@@ -1,0 +1,6 @@
+{
+  "name": "Saubhagya Emporium",
+  "description": "Saubhagya Emporium — Ladies clothing and saree store on Main Road, Katol featuring Silk & Daily Sarees, Ethnic Kurtis & Suits, Girls' & Western Wear, and Bridal Lehengas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

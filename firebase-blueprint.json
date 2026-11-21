@@ -1,0 +1,298 @@
+{
+  "entities": {
+    "StoreConfig": {
+      "title": "StoreConfig",
+      "description": "Publicly visible store details and contact configuration for Saubhagya Emporium.",
+      "type": "object",
+      "properties": {
+        "storeName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80,
+          "description": "Display name of the retail store."
+        },
+        "tagline": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 200,
+          "description": "Hero tagline describing store fashion and quality."
+        },
+        "addressLine1": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 120,
+          "description": "Primary street address."
+        },
+        "addressLine2": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 120,
+          "description": "City, district, and postal code."
+        },
+        "hoursLabel": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 40,
+          "description": "Opening days label such as Open Daily."
+        },
+        "hoursTime": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 60,
+          "description": "Store opening hours range."
+        },
+        "phoneDisplay": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 24,
+          "description": "Formatted click-to-call phone number."
+        },
+        "whatsappNumber": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 15,
+          "pattern": "^[0-9]{10,15}$",
+          "description": "Digits-only WhatsApp number with country code."
+        },
+        "updatedByUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID of the owner or editor who last updated store info."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last update."
+        }
+      },
+      "required": [
+        "storeName",
+        "tagline",
+        "addressLine1",
+        "addressLine2",
+        "hoursLabel",
+        "hoursTime",
+        "phoneDisplay",
+        "whatsappNumber",
+        "updatedByUid",
+        "updatedAt"
+      ]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Clothing catalog item displayed on the Saubhagya Emporium storefront.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100,
+          "description": "Product title."
+        },
+        "category": {
+          "type": "string",
+          "enum": ["sarees", "kurtis", "western", "bridal"],
+          "description": "Ladies & Sarees store department."
+        },
+        "subCategory": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60,
+          "description": "Specific garment category label."
+        },
+        "fabric": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60,
+          "description": "Fabric or weave material."
+        },
+        "priceInr": {
+          "type": "number",
+          "description": "Price in Indian Rupees (INR)."
+        },
+        "sizes": {
+          "type": "array",
+          "description": "Available garment sizes (S, M, L, XL)."
+        },
+        "colorName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 50,
+          "description": "Primary colorway label."
+        },
+        "image": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 500,
+          "description": "Image asset path or HTTPS URL."
+        },
+        "alt": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 200,
+          "description": "Accessible image alt description."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 300,
+          "description": "Short garment description."
+        },
+        "published": {
+          "type": "boolean",
+          "description": "Whether the product is visible in the public catalog."
+        },
+        "inStock": {
+          "type": "boolean",
+          "description": "Whether the garment is currently in stock."
+        },
+        "updatedByUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID of the staff member who created or edited this product."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when product was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last update."
+        }
+      },
+      "required": [
+        "name",
+        "category",
+        "subCategory",
+        "fabric",
+        "priceInr",
+        "sizes",
+        "colorName",
+        "image",
+        "alt",
+        "description",
+        "published",
+        "inStock",
+        "updatedByUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "StoreAdmin": {
+      "title": "StoreAdmin",
+      "description": "Authorized store editor granted access via owner invite.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID of the authorized editor."
+        },
+        "email": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 120,
+          "description": "Verified Google email of the editor."
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "description": "Editor display name."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["editor"],
+          "description": "Assigned role."
+        },
+        "inviteCode": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 32,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Invite code claimed to authorize this editor."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when editor access was claimed."
+        }
+      },
+      "required": ["uid", "email", "displayName", "role", "inviteCode", "createdAt"]
+    },
+    "EditorInvite": {
+      "title": "EditorInvite",
+      "description": "Single-use invite code generated by the store owner to grant mobile editing access to a friend.",
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 32,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Unique alphanumeric invite code."
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60,
+          "description": "Friendly label such as Friend Mobile Access."
+        },
+        "active": {
+          "type": "boolean",
+          "description": "True until claimed by an editor or revoked."
+        },
+        "createdByUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Owner UID that created the invite."
+        },
+        "usedByUid": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 128,
+          "description": "UID of the editor who claimed the invite."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when invite was generated."
+        },
+        "claimedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when invite was claimed."
+        }
+      },
+      "required": ["code", "label", "active", "createdByUid", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/store_config/{configId}": {
+      "schema": { "$ref": "#/entities/StoreConfig" },
+      "description": "Public store details document ('main') editable by store owner and authorized editors."
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Live clothing catalog items publicly readable when published and editable by owner/editors."
+    },
+    "/admins/{adminUid}": {
+      "schema": { "$ref": "#/entities/StoreAdmin" },
+      "description": "Authorized store editors (PII restricted to the editor themselves and the store owner)."
+    },
+    "/editor_invites/{inviteCode}": {
+      "schema": { "$ref": "#/entities/EditorInvite" },
+      "description": "Single-use invite codes generated by the store owner for granting friend mobile edit access."
+    }
+  }
+}

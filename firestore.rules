@@ -1,0 +1,202 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net: deny everything by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Core identity and validation primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedEmail() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isBootstrappedOwner() {
+      return isVerifiedEmail() && request.auth.token.email == 'kunalkadu9518958@gmail.com';
+    }
+
+    function isAuthorizedEditor() {
+      return isVerifiedEmail() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isStoreStaff() {
+      return isBootstrappedOwner() || isAuthorizedEditor();
+    }
+
+    // StoreConfig validation blueprint
+    function isValidStoreConfig(data) {
+      return data.keys().hasAll([
+          'storeName', 'tagline', 'addressLine1', 'addressLine2',
+          'hoursLabel', 'hoursTime', 'phoneDisplay', 'whatsappNumber',
+          'updatedByUid', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'storeName', 'tagline', 'addressLine1', 'addressLine2',
+          'hoursLabel', 'hoursTime', 'phoneDisplay', 'whatsappNumber',
+          'updatedByUid', 'updatedAt'
+        ])
+        && data.storeName is string && data.storeName.size() >= 2 && data.storeName.size() <= 80
+        && data.tagline is string && data.tagline.size() >= 5 && data.tagline.size() <= 200
+        && data.addressLine1 is string && data.addressLine1.size() >= 3 && data.addressLine1.size() <= 120
+        && data.addressLine2 is string && data.addressLine2.size() >= 3 && data.addressLine2.size() <= 120
+        && data.hoursLabel is string && data.hoursLabel.size() >= 2 && data.hoursLabel.size() <= 40
+        && data.hoursTime is string && data.hoursTime.size() >= 5 && data.hoursTime.size() <= 60
+        && data.phoneDisplay is string && data.phoneDisplay.size() >= 8 && data.phoneDisplay.size() <= 24
+        && data.whatsappNumber is string && data.whatsappNumber.size() >= 10 && data.whatsappNumber.size() <= 15 && data.whatsappNumber.matches('^[0-9]{10,15}$')
+        && data.updatedByUid is string && isValidId(data.updatedByUid) && data.updatedByUid == request.auth.uid
+        && data.updatedAt is timestamp && data.updatedAt == request.time;
+    }
+
+    // Product validation blueprint
+    function isValidProduct(data) {
+      return data.keys().hasAll([
+          'name', 'category', 'subCategory', 'fabric', 'priceInr',
+          'sizes', 'colorName', 'image', 'alt', 'description',
+          'published', 'inStock', 'updatedByUid', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'name', 'category', 'subCategory', 'fabric', 'priceInr',
+          'sizes', 'colorName', 'image', 'alt', 'description',
+          'published', 'inStock', 'updatedByUid', 'createdAt', 'updatedAt'
+        ])
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 100
+        && data.category is string && data.category in ['sarees', 'kurtis', 'western', 'bridal']
+        && data.subCategory is string && data.subCategory.size() >= 2 && data.subCategory.size() <= 60
+        && data.fabric is string && data.fabric.size() >= 2 && data.fabric.size() <= 60
+        && (data.priceInr is int || data.priceInr is float) && data.priceInr > 0 && data.priceInr <= 1000000
+        && data.sizes is list && data.sizes.size() >= 1 && data.sizes.size() <= 4 && data.sizes[0] is string && data.sizes.hasOnly(['S', 'M', 'L', 'XL'])
+        && data.colorName is string && data.colorName.size() >= 2 && data.colorName.size() <= 50
+        && data.image is string && data.image.size() >= 5 && data.image.size() <= 500
+        && data.alt is string && data.alt.size() >= 2 && data.alt.size() <= 200
+        && data.description is string && data.description.size() >= 4 && data.description.size() <= 300
+        && data.published is bool
+        && data.inStock is bool
+        && data.updatedByUid is string && isValidId(data.updatedByUid) && data.updatedByUid == request.auth.uid
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp && data.updatedAt == request.time;
+    }
+
+    // StoreAdmin validation blueprint
+    function isValidAdminDoc(data, adminUid) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'role', 'inviteCode', 'createdAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'role', 'inviteCode', 'createdAt'])
+        && data.uid is string && isValidId(data.uid) && data.uid == adminUid && data.uid == request.auth.uid
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 120 && data.email == request.auth.token.email
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80
+        && data.role is string && data.role == 'editor'
+        && data.inviteCode is string && data.inviteCode.size() >= 6 && data.inviteCode.size() <= 32 && data.inviteCode.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.createdAt is timestamp && data.createdAt == request.time;
+    }
+
+    // EditorInvite validation blueprint
+    function isValidInvite(data, inviteCode) {
+      return data.keys().hasAll(['code', 'label', 'active', 'createdByUid', 'createdAt'])
+        && data.keys().hasOnly(['code', 'label', 'active', 'createdByUid', 'createdAt', 'usedByUid', 'claimedAt'])
+        && data.code is string && data.code.size() >= 6 && data.code.size() <= 32 && data.code.matches('^[a-zA-Z0-9_\\-]+$') && data.code == inviteCode
+        && data.label is string && data.label.size() >= 1 && data.label.size() <= 60
+        && data.active is bool
+        && data.createdByUid is string && isValidId(data.createdByUid)
+        && data.createdAt is timestamp;
+    }
+
+    // Store public configuration
+    match /store_config/{configId} {
+      allow get: if isValidId(configId) && configId == 'main';
+      allow list: if false;
+      allow create: if isValidId(configId) && configId == 'main' && isStoreStaff() && isValidStoreConfig(incoming());
+      allow update: if isValidId(configId) && configId == 'main' && isStoreStaff()
+        && isValidStoreConfig(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'storeName', 'tagline', 'addressLine1', 'addressLine2',
+          'hoursLabel', 'hoursTime', 'phoneDisplay', 'whatsappNumber',
+          'updatedByUid', 'updatedAt'
+        ]);
+      allow delete: if false;
+    }
+
+    // Store product catalog
+    match /products/{productId} {
+      allow get: if isValidId(productId) && ((resource != null && resource.data.published == true) || isStoreStaff());
+      allow list: if resource.data.published == true;
+      allow create: if isValidId(productId) && isStoreStaff()
+        && isValidProduct(incoming())
+        && incoming().createdAt == request.time;
+      allow update: if isValidId(productId) && isStoreStaff()
+        && isValidProduct(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'category', 'subCategory', 'fabric', 'priceInr',
+          'sizes', 'colorName', 'image', 'alt', 'description',
+          'published', 'inStock', 'updatedByUid', 'updatedAt'
+        ]);
+      allow delete: if isValidId(productId) && isStoreStaff();
+    }
+
+    // Authorized store editors (PII isolated to owner and matching editor)
+    match /admins/{adminUid} {
+      allow get: if isValidId(adminUid) && isVerifiedEmail() && (request.auth.uid == adminUid || isBootstrappedOwner());
+      allow list: if isBootstrappedOwner();
+      allow create: if isValidId(adminUid) && isVerifiedEmail()
+        && adminUid == request.auth.uid
+        && isValidAdminDoc(incoming(), adminUid)
+        && exists(/databases/$(database)/documents/editor_invites/$(incoming().inviteCode))
+        && get(/databases/$(database)/documents/editor_invites/$(incoming().inviteCode)).data.active == true
+        && getAfter(/databases/$(database)/documents/editor_invites/$(incoming().inviteCode)).data.active == false
+        && getAfter(/databases/$(database)/documents/editor_invites/$(incoming().inviteCode)).data.usedByUid == request.auth.uid;
+      allow update: if false;
+      allow delete: if isValidId(adminUid) && isBootstrappedOwner();
+    }
+
+    // Single-use invite codes for adding friend mobile access
+    match /editor_invites/{inviteCode} {
+      allow get: if isValidId(inviteCode) && isVerifiedEmail();
+      allow list: if isBootstrappedOwner();
+      allow create: if isValidId(inviteCode) && isBootstrappedOwner()
+        && isValidInvite(incoming(), inviteCode)
+        && incoming().active == true
+        && incoming().createdByUid == request.auth.uid
+        && incoming().createdAt == request.time
+        && !('usedByUid' in incoming())
+        && !('claimedAt' in incoming());
+      allow update: if isValidId(inviteCode) && isVerifiedEmail()
+        && isValidInvite(incoming(), inviteCode)
+        && (
+          (
+            isBootstrappedOwner()
+            && incoming().createdByUid == existing().createdByUid
+            && incoming().createdAt == existing().createdAt
+            && incoming().diff(existing()).affectedKeys().hasOnly(['active', 'label'])
+          )
+          ||
+          (
+            existing().active == true
+            && incoming().active == false
+            && incoming().createdByUid == existing().createdByUid
+            && incoming().createdAt == existing().createdAt
+            && incoming().usedByUid is string && incoming().usedByUid == request.auth.uid
+            && incoming().claimedAt is timestamp && incoming().claimedAt == request.time
+            && incoming().diff(existing()).affectedKeys().hasOnly(['active', 'usedByUid', 'claimedAt'])
+            && existsAfter(/databases/$(database)/documents/admins/$(request.auth.uid))
+          )
+        );
+      allow delete: if isValidId(inviteCode) && isBootstrappedOwner();
+    }
+  }
+}
